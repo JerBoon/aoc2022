@@ -26,6 +26,12 @@ choose <- function(current_loc = "AA",
                    total_flow = 0,
                    sequence = "AA") {
   
+  # These too bits to attempt to avoid going down inefficient branches. May need to tune!
+  if (moves_so_far == 5 & total_flow == 0)
+    return()
+  if (moves_so_far == 20 & total_flow < 600)
+    return()
+  
   if (moves_so_far == 30)
   {
     if (total_flow > best) {
@@ -34,8 +40,25 @@ choose <- function(current_loc = "AA",
     }
     return()
   }
-
-  #print(paste(sequence,collapse=","))
+  
+  # ---
+  
+  
+  for (mov in strsplit(df$leads_to[df$valve == current_loc], ",")[[1]])
+  {
+    if (!(mov %in% came_from) &
+        !(came_from[length(came_from)] %in% strsplit(df$leads_to[df$valve == mov],",")[[1]]))   ## to avoid going in little triangles to get from A to B!
+    {
+      choose(came_from = c(came_from, current_loc),  ## any places visited since last value open would be wasteful
+             current_loc = mov,
+             moves_so_far = moves_so_far + 1,
+             open_valves = open_valves,
+             total_flow = total_flow + flow_rate,
+             flow_rate = flow_rate,
+             sequence = c(sequence, mov))
+    }
+  }
+  
   if (!(current_loc %in% open_valves) &
       df$flow_rate[df$valve == current_loc] > 0)
   {
@@ -48,20 +71,8 @@ choose <- function(current_loc = "AA",
            sequence = c(sequence, paste("open",current_loc)))
   }
   
-  for (mov in strsplit(df$leads_to[df$valve == current_loc], ",")[[1]])
-  {
-    if (!(mov %in% came_from)) {
-      choose(came_from = c(came_from, current_loc),  ## any places visited since last value open would be wasteful
-             current_loc = mov,
-             moves_so_far = moves_so_far + 1,
-             open_valves = open_valves,
-             total_flow = total_flow + flow_rate,
-             flow_rate = flow_rate,
-             sequence = c(sequence, mov))
-    }
-  }
 }
 
 best <- 0
-choose()
-
+system.time(choose())
+print("1651 AA,DD,open DD,CC,BB,open BB,AA,II,JJ,open JJ,II,AA,DD,EE,FF,GG,HH,open HH,GG,FF,EE,open EE,DD,CC,open CC,BB,AA,DD,EE,FF,GG")  # test results
