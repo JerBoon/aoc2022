@@ -5,6 +5,8 @@ dat <- readLines("data/Day16.txt")
 library(dplyr)
 library(tidyr)
 
+# Bit of dplyr to simplify the dataset.
+
 df <- data.frame(raw= dat) %>%
   mutate(raw = sub("Valve ","",raw)) %>%
   mutate(raw = sub(" has flow rate=",";", raw)) %>%
@@ -16,7 +18,17 @@ df
 
 best <- 0
 
+
 ## Part 1
+
+
+# Is basically just a recursive function which explores a tree of every possible choice...
+# But of course they've built a challenge which makes that somewhat inefficient (I reckon of maybe 
+# ~ 3^30 possible routes available, or thereabouts, if you try every possible option)
+#
+# I never tested that version to completion. It ran for a couple of hours but I got bored...
+# So have added a few special moves to avoid exploring some of the more obvious inefficient branches.
+
 
 choose <- function(current_loc = "AA",
                    came_from = "-",
@@ -26,11 +38,16 @@ choose <- function(current_loc = "AA",
                    total_flow = 0,
                    sequence = "AA") {
   
-  # These too bits to attempt to avoid going down inefficient branches. May need to tune!
+  # These too bits of code are to attempt to avoid going down inefficient branches. May need to tune!
+
   if (moves_so_far == 5 & total_flow == 0)
     return()
   if (moves_so_far == 20 & total_flow < 600)
     return()
+  
+  
+  # If we're out of time (i.e. made 30 choices), then don't carry on!
+  # If this is the best flow rate so far, then print out the sequence and flow for good measure...
   
   if (moves_so_far == 30)
   {
@@ -42,7 +59,10 @@ choose <- function(current_loc = "AA",
   }
   
   # ---
-  
+  # Now branch for each possible choice of 
+  # + Open this valve if it closed and non-zero
+  # + Go down any tunnel that you've not either immediately come from, or 
+  #   would obviously be a move consisting of taking 2 tunnels consecutively where one would have got you there
   
   for (mov in strsplit(df$leads_to[df$valve == current_loc], ",")[[1]])
   {
